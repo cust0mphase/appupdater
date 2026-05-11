@@ -14,11 +14,13 @@ public class AppVersion {
 
     private String version;
 
+    @Enumerated(EnumType.STRING)
     private Platform platform;
 
     private LocalDateTime releaseDate;
     private String changelog;
 
+    @Enumerated(EnumType.STRING)
     private UpdateType updateType;
 
     private boolean isActive;
