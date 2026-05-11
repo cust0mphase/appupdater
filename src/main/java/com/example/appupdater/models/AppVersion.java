@@ -1,5 +1,6 @@
 package com.example.appupdater.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -23,5 +24,6 @@ public class AppVersion {
     @Enumerated(EnumType.STRING)
     private UpdateType updateType;
 
+    @JsonProperty("isActive")
     private boolean isActive;
 }
