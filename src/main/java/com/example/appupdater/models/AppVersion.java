@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "app_versions")
@@ -36,4 +37,9 @@ public class AppVersion {
 
     @JsonProperty("isActive")
     private boolean isActive;
+
+    @JsonIgnore
+    public boolean isActive() {
+        return isActive;
+    }
 }
