@@ -1,6 +1,7 @@
 package com.example.appupdater.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 public class AppVersion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
     @NotBlank(message = "Номер версии не может быть пустым")
@@ -22,6 +24,7 @@ public class AppVersion {
     @Enumerated(EnumType.STRING)
     private Platform platform;
 
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime releaseDate;
 
     @NotBlank(message = "Описание изменений (changelog) обязательно")
