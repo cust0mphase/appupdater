@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,7 +25,8 @@ public class AppVersionController {
     private final AppUpdateService updateService;
 
     @PostMapping
-    public AppVersion createVersion(@RequestBody AppVersion version) {
+    @Operation(summary = "Добавить новую версию", description = "Создает новую версию (нужна валидация полей)")
+    public AppVersion createVersion(@Valid @RequestBody AppVersion version) {
         version.setReleaseDate(LocalDateTime.now());
         return repository.save(version);
     }
