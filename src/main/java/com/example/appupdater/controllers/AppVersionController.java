@@ -8,17 +8,18 @@ import com.example.appupdater.models.Platform;
 import com.example.appupdater.models.UpdateType;
 import com.example.appupdater.repositories.AppVersionRepository;
 import com.example.appupdater.services.AppUpdateService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/versions")
 @RequiredArgsConstructor
 @Tag(name = "Управление обновлениями", description = "API для работы с версиями и статистикой")
 public class AppVersionController {
@@ -27,8 +28,8 @@ public class AppVersionController {
     private final AppUpdateService updateService;
     private final NotificationBot notificationBot;
 
-    @PostMapping
-    @Operation(summary = "Добавить новую версию", description = "Создает новую версию (нужна валидация полей)")
+    @PostMapping("/api/versions")
+    @Operation(summary = "Добавить новую версию")
     public AppVersion createVersion(@Valid @RequestBody AppVersion version) {
         version.setReleaseDate(LocalDateTime.now());
         AppVersion savedVersion = repository.save(version);
@@ -42,29 +43,34 @@ public class AppVersionController {
             );
             notificationBot.sendNotification(message);
         }
-
         return savedVersion;
     }
 
-    @GetMapping
-    public List<AppVersion> getAllVersions() {
-        return repository.findAll();
+    @GetMapping("/api/versions/latest")
+    @Operation(summary = "Получить последнюю версию для платформы")
+    public ResponseEntity<AppVersion> getLatestVersion(@RequestParam Platform platform) {
+        Optional<AppVersion> latest = repository.findFirstByPlatformAndIsActiveTrueOrderByReleaseDateDesc(platform);
+        return latest.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/check")
-    public UpdateResponseDTO checkUpdate(
+    @GetMapping("/api/update/check")
+    @Operation(summary = "Проверка наличия обновлений")
+    public UpdateResponseDTO checkForUpdate(
             @RequestParam String userId,
-            @RequestParam String currentVersion,
-            @RequestParam Platform platform) {
-        updateService.updateUserDevice(userId, platform, currentVersion);
+            @RequestParam Platform platform,
+            @RequestParam String current) {
+
+        updateService.updateUserDevice(userId, platform, current);
         AppVersion latest = updateService.getLatestVersion(platform);
-        boolean isNeeded = updateService.isUpdateNeeded(currentVersion, latest != null ? latest.getVersion() : currentVersion);
+        boolean isNeeded = updateService.isUpdateNeeded(current, latest != null ? latest.getVersion() : current);
         String message = isNeeded ? "Ваша версия устарела - необходимо обновление!" : "У вас актуальная версия";
+
         return new UpdateResponseDTO(isNeeded, isNeeded ? latest : null, message);
     }
 
-    @PostMapping("/log")
-    @Operation(summary = "Лог установки", description = "Записать информацию о том, что пользователь обновился")
+    @PostMapping("/api/update/log")
+    @Operation(summary = "Лог установки")
     public void logUpdate(
             @RequestParam String userId,
             @RequestParam Platform platform,
@@ -72,8 +78,8 @@ public class AppVersionController {
         updateService.logUpdateInstallation(userId, platform, newVersion);
     }
 
-    @GetMapping("/stats")
-    @Operation(summary = "Статистика", description = "Получить статистику установок конкретной версии")
+    @GetMapping("/api/stats/updates")
+    @Operation(summary = "Статистика")
     public UpdateStatsDTO getStats(@RequestParam String version) {
         return updateService.getStatsForVersion(version);
     }
