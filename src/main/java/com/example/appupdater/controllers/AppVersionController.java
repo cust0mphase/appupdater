@@ -171,4 +171,11 @@ public class AppVersionController {
         log.info("Запрос данных для тепловой карты распространения версий");
         return updateService.getVersionSpreadHeatmap();
     }
+
+    @GetMapping("/api/versions/deprecated")
+    @Operation(summary = "Устаревшие версии", description = "Загрузить список заблокированных версий из YAML конфигурации")
+    public List<com.example.appupdater.models.DeprecatedVersion> getDeprecatedVersions() {
+        log.info("Запрос списка устаревших версий из YAML");
+        return updateService.getDeprecatedVersionsFromYaml();
+    }
 }

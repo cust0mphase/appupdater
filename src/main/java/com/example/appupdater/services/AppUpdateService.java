@@ -15,6 +15,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.stream.Collectors;
+
+import org.yaml.snakeyaml.Yaml;
+import java.io.InputStream;
+import java.time.LocalDate;
+import java.util.ArrayList;
+ import com.example.appupdater.models.DeprecatedVersion;
 
 @Service
 @RequiredArgsConstructor
@@ -84,5 +91,33 @@ public class AppUpdateService {
         double rate = (double) updatedUsers / allDevices.size() * 100;
 
         return new UpdateStatsDTO(version, platformCounts, rate);
+    }
+
+    public List<DeprecatedVersion> getDeprecatedVersionsFromYaml() {
+        Yaml yaml = new Yaml();
+        List<DeprecatedVersion> deprecatedList = new ArrayList<>();
+
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("deprecated.yml")) {
+            if (inputStream == null) {
+                throw new RuntimeException("Файл deprecated.yml не найден!");
+            }
+
+            Map<String, List<Map<String, Object>>> data = yaml.load(inputStream);
+            List<Map<String, Object>> versionsData = data.get("deprecated");
+
+            if (versionsData != null) {
+                for (Map<String, Object> item : versionsData) {
+                    DeprecatedVersion dv = new DeprecatedVersion();
+                    dv.setVersion((String) item.get("version"));
+                    dv.setPlatform(Platform.valueOf((String) item.get("platform")));
+                    dv.setBlockDate(LocalDate.parse((String) item.get("blockDate")));
+                    deprecatedList.add(dv);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при чтении YAML файла: " + e.getMessage(), e);
+        }
+
+        return deprecatedList;
     }
 }
