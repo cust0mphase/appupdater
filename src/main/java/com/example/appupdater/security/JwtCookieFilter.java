@@ -37,16 +37,26 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             }
         }
 
-        if (jwt != null && tokenProvider.validateToken(jwt)) {
-            String username = tokenProvider.getUsernameFromJWT(jwt);
-            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+        if (jwt != null) {
+            boolean isValid = tokenProvider.validateToken(jwt);
+            System.out.println("Токен найден. Валидный? " + isValid);
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities()
-            );
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            if (isValid) {
+                try {
+                    String username = tokenProvider.getUsernameFromJWT(jwt);
+                    System.out.println("Пользователь из токена: " + username);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                } catch (Exception e) {
+                }
+            }
         }
 
         filterChain.doFilter(request, response);

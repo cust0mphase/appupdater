@@ -11,7 +11,9 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+    private final String jwtSecret = "MySuperSecretKeyForUpdatesApplicationWhichMustBeVeryLongToWorkWithHS512Algorithm123!";
+
+    private final Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
 
     private final long jwtExpirationInMs = 86400000;
 
