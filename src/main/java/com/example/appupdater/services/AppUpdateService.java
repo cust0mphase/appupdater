@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,18 @@ public class AppUpdateService {
         device.setLastSeen(LocalDateTime.now());
 
         deviceRepository.save(device);
+    }
+
+    public Map<String, Map<String, Long>> getVersionSpreadHeatmap() {
+        return deviceRepository.findAll().stream()
+                .filter(device -> device.getLastSeen() != null)
+                .collect(Collectors.groupingBy(
+                        device -> device.getPlatform().name(),
+                        Collectors.groupingBy(
+                                device -> device.getLastSeen().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                                Collectors.counting()
+                        )
+                ));
     }
 
     public boolean isUpdateNeeded(String current, String latest) {

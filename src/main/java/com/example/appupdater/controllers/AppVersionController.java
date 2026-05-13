@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -162,5 +163,12 @@ public class AppVersionController {
                 );
             }
         }
+    }
+
+    @GetMapping("/api/stats/heatmap")
+    @Operation(summary = "Тепловая карта", description = "Данные для тепловой карты: Платформа -> Дата -> Количество активных устройств")
+    public Map<String, Map<String, Long>> getHeatmap() {
+        log.info("Запрос данных для тепловой карты распространения версий");
+        return updateService.getVersionSpreadHeatmap();
     }
 }
