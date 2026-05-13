@@ -133,4 +133,34 @@ public class AppVersionController {
         log.warn("Попытка удалить несуществующую версию с ID: {}", id);
         return ResponseEntity.notFound().build();
     }
+
+    @GetMapping(value = "/api/versions/export", produces = "text/csv")
+    @Operation(summary = "Экспорт отчета", description = "Скачать список всех версий в формате CSV")
+    public void exportVersionsToCSV(jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        log.info("Запрос на экспорт списка версий в CSV");
+
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=\"app_versions_report.csv\"");
+
+        List<AppVersion> versions = repository.findAll();
+
+        try (java.io.PrintWriter writer = response.getWriter()) {
+            writer.write('\uFEFF');
+
+            writer.println("ID,Версия,Платформа,Дата_Релиза,Тип_Обновления,Активна,Изменения");
+
+            for (AppVersion v : versions) {
+                String safeChangelog = v.getChangelog() != null ? v.getChangelog().replace("\"", "\"\"") : "";
+                writer.printf("%d,%s,%s,%s,%s,%b,\"%s\"%n",
+                        v.getId(),
+                        v.getVersion(),
+                        v.getPlatform(),
+                        v.getReleaseDate() != null ? v.getReleaseDate().toString() : "",
+                        v.getUpdateType(),
+                        v.isActive(),
+                        safeChangelog
+                );
+            }
+        }
+    }
 }
