@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Управление обновлениями", description = "API для работы с версиями и статистикой")
@@ -31,10 +33,12 @@ public class AppVersionController {
     @PostMapping("/api/versions")
     @Operation(summary = "Добавить новую версию")
     public AppVersion createVersion(@Valid @RequestBody AppVersion version) {
+        log.info("Получен запрос на создание новой версии {} для платформы {}", version.getVersion(), version.getPlatform());
         version.setReleaseDate(LocalDateTime.now());
         AppVersion savedVersion = repository.save(version);
 
         if (savedVersion.getUpdateType() == UpdateType.MANDATORY) {
+            log.info("Отправка уведомления в Telegram о критическом обновлении версии {}", savedVersion.getVersion());
             String message = String.format(
                     "Критическое обновление\n\n" + "Платформа: %s\nВерсия: %s\nИзменения: %s\n\nПросьба всем пользователям обновиться!",
                     savedVersion.getPlatform(),
@@ -49,9 +53,13 @@ public class AppVersionController {
     @GetMapping("/api/versions/latest")
     @Operation(summary = "Получить последнюю версию для платформы")
     public ResponseEntity<AppVersion> getLatestVersion(@RequestParam Platform platform) {
+        log.info("Запрос последней версии для платформы: {}", platform);
         Optional<AppVersion> latest = repository.findFirstByPlatformAndIsActiveTrueOrderByReleaseDateDesc(platform);
         return latest.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> {
+                    log.warn("Активная версия для платформы {} не найдена", platform);
+                    return ResponseEntity.notFound().build();
+                });
     }
 
     @GetMapping("/api/update/check")
@@ -60,6 +68,7 @@ public class AppVersionController {
             @RequestParam String userId,
             @RequestParam Platform platform,
             @RequestParam String current) {
+        log.info("Пользователь {} проверяет наличие обновлений. Текущая версия: {}, Платформа: {}", userId, current, platform);
 
         updateService.updateUserDevice(userId, platform, current);
         AppVersion latest = updateService.getLatestVersion(platform);
@@ -75,24 +84,28 @@ public class AppVersionController {
             @RequestParam String userId,
             @RequestParam Platform platform,
             @RequestParam String newVersion) {
+        log.info("Пользователь {} успешно обновился до версии {} на платформе {}", userId, newVersion, platform);
         updateService.logUpdateInstallation(userId, platform, newVersion);
     }
 
     @GetMapping("/api/stats/updates")
     @Operation(summary = "Статистика")
     public UpdateStatsDTO getStats(@RequestParam String version) {
+        log.info("Запрос статистики по версии: {}", version);
         return updateService.getStatsForVersion(version);
     }
 
     @GetMapping("/api/versions")
     @Operation(summary = "Получить все версии")
     public List<AppVersion> getAllVersions() {
+        log.info("Запрос полного списка всех версий");
         return repository.findAll();
     }
 
     @PutMapping("/api/versions/{id}")
     @Operation(summary = "Обновить существующую версию")
     public ResponseEntity<AppVersion> updateVersion(@PathVariable Long id, @Valid @RequestBody AppVersion updatedVersion) {
+        log.info("Запрос на редактирование версии с ID: {}", id);
         return repository.findById(id)
                 .map(version -> {
                     version.setVersion(updatedVersion.getVersion());
@@ -102,16 +115,22 @@ public class AppVersionController {
                     version.setActive(updatedVersion.isActive());
                     return ResponseEntity.ok(repository.save(version));
                 })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> {
+                    log.warn("Попытка обновить несуществующую версию с ID: {}", id);
+                    return ResponseEntity.notFound().build();
+                });
     }
 
     @DeleteMapping("/api/versions/{id}")
     @Operation(summary = "Удалить версию")
     public ResponseEntity<Void> deleteVersion(@PathVariable Long id) {
+        log.info("Запрос на удаление версии с ID: {}", id);
         if (repository.existsById(id)) {
             repository.deleteById(id);
+            log.info("Версия с ID {} успешно удалена", id);
             return ResponseEntity.ok().build();
         }
+        log.warn("Попытка удалить несуществующую версию с ID: {}", id);
         return ResponseEntity.notFound().build();
     }
 }

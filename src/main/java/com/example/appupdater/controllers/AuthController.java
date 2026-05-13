@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class AuthController {
     @PostMapping("/register")
     @Operation(summary = "Регистрация нового пользователя")
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
+        log.info("Получен запрос на регистрацию пользователя: {}", request.getUsername());
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             return ResponseEntity.badRequest().body("Пользователь с таким именем уже существует!");
         }
@@ -42,12 +45,14 @@ public class AuthController {
         user.setEnabled(true);
 
         userRepository.save(user);
+        log.info("Пользователь {} успешно зарегистрирован", request.getUsername());
         return ResponseEntity.ok("Пользователь успешно зарегистрирован");
     }
 
     @PostMapping("/login")
     @Operation(summary = "Вход и получение JWT в Cookie")
     public ResponseEntity<String> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+        log.info("Попытка входа в систему для пользователя: {}", request.getUsername());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
@@ -63,6 +68,7 @@ public class AuthController {
 
         response.addCookie(cookie);
 
+        log.info("Пользователь {} успешно вошел в систему", request.getUsername());
         return ResponseEntity.ok("Успешный вход! Токен сохранен в Cookies.");
     }
 
@@ -74,6 +80,7 @@ public class AuthController {
         cookie.setHttpOnly(true);
         cookie.setMaxAge(0);
         response.addCookie(cookie);
+        log.info("Выполнен запрос на выход из системы (очистка JWT Cookie)");
         return ResponseEntity.ok("Вы успешно вышли из системы");
     }
 }
