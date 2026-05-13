@@ -83,4 +83,35 @@ public class AppVersionController {
     public UpdateStatsDTO getStats(@RequestParam String version) {
         return updateService.getStatsForVersion(version);
     }
+
+    @GetMapping("/api/versions")
+    @Operation(summary = "Получить все версии")
+    public List<AppVersion> getAllVersions() {
+        return repository.findAll();
+    }
+
+    @PutMapping("/api/versions/{id}")
+    @Operation(summary = "Обновить существующую версию")
+    public ResponseEntity<AppVersion> updateVersion(@PathVariable Long id, @Valid @RequestBody AppVersion updatedVersion) {
+        return repository.findById(id)
+                .map(version -> {
+                    version.setVersion(updatedVersion.getVersion());
+                    version.setPlatform(updatedVersion.getPlatform());
+                    version.setChangelog(updatedVersion.getChangelog());
+                    version.setUpdateType(updatedVersion.getUpdateType());
+                    version.setActive(updatedVersion.isActive());
+                    return ResponseEntity.ok(repository.save(version));
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/api/versions/{id}")
+    @Operation(summary = "Удалить версию")
+    public ResponseEntity<Void> deleteVersion(@PathVariable Long id) {
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
 }
