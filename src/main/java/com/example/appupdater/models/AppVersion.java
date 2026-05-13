@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.example.appupdater.validation.ValidAppVersion;
 
 @Entity
 @Table(name = "app_versions")
@@ -19,6 +20,7 @@ public class AppVersion {
     private Long id;
 
     @NotBlank(message = "Номер версии не может быть пустым")
+    @ValidAppVersion
     private String version;
 
     @NotNull(message = "Платформа обязательна")
