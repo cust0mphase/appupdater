@@ -39,13 +39,9 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         if (jwt != null) {
             boolean isValid = tokenProvider.validateToken(jwt);
-            System.out.println("Токен найден. Валидный? " + isValid);
-
             if (isValid) {
                 try {
                     String username = tokenProvider.getUsernameFromJWT(jwt);
-                    System.out.println("Пользователь из токена: " + username);
-
                     UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
