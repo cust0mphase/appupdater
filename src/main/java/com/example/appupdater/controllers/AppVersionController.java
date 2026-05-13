@@ -1,9 +1,11 @@
 package com.example.appupdater.controllers;
 
+import com.example.appupdater.bot.NotificationBot;
 import com.example.appupdater.dto.UpdateResponseDTO;
 import com.example.appupdater.dto.UpdateStatsDTO;
 import com.example.appupdater.models.AppVersion;
 import com.example.appupdater.models.Platform;
+import com.example.appupdater.models.UpdateType;
 import com.example.appupdater.repositories.AppVersionRepository;
 import com.example.appupdater.services.AppUpdateService;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +25,25 @@ public class AppVersionController {
 
     private final AppVersionRepository repository;
     private final AppUpdateService updateService;
+    private final NotificationBot notificationBot;
 
     @PostMapping
     @Operation(summary = "Добавить новую версию", description = "Создает новую версию (нужна валидация полей)")
     public AppVersion createVersion(@Valid @RequestBody AppVersion version) {
         version.setReleaseDate(LocalDateTime.now());
-        return repository.save(version);
+        AppVersion savedVersion = repository.save(version);
+
+        if (savedVersion.getUpdateType() == UpdateType.MANDATORY) {
+            String message = String.format(
+                    "Критическое обновление\n\n" + "Платформа: %s\nВерсия: %s\nИзменения: %s\n\nПросьба всем пользователям обновиться!",
+                    savedVersion.getPlatform(),
+                    savedVersion.getVersion(),
+                    savedVersion.getChangelog()
+            );
+            notificationBot.sendNotification(message);
+        }
+
+        return savedVersion;
     }
 
     @GetMapping
