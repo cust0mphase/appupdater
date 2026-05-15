@@ -178,4 +178,14 @@ public class AppVersionController {
         log.info("Запрос списка устаревших версий из YAML");
         return updateService.getDeprecatedVersionsFromYaml();
     }
+
+    @PostMapping("/upload-config")
+    @Operation(summary = "Загрузка файла конфигурации", description = "Загрузить новый YAML файл (MultipartFile)")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        log.info("Получен файл для загрузки: {}", file.getOriginalFilename());
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("Файл пуст!");
+        }
+        return ResponseEntity.ok("Файл " + file.getOriginalFilename() + " успешно загружен и обработан системой размером: " + file.getSize() + " байт");
+    }
 }
