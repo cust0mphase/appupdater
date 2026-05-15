@@ -179,8 +179,7 @@ public class AppVersionController {
         return updateService.getDeprecatedVersionsFromYaml();
     }
 
-    @PostMapping("/upload-config")
-    @Operation(summary = "Загрузка файла конфигурации", description = "Загрузить новый YAML файл (MultipartFile)")
+    @PostMapping(value = "/upload-config", consumes = "multipart/form-data")    @Operation(summary = "Загрузка файла конфигурации", description = "Загрузить новый YAML файл (MultipartFile)")
     public ResponseEntity<String> uploadFile(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         log.info("Получен файл для загрузки: {}", file.getOriginalFilename());
         if (file.isEmpty()) {
