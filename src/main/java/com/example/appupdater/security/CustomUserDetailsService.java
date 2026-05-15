@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,16 +23,22 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
 
-        List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
         if (user.getRoles() != null) {
-            authorities.addAll(user.getRoles().stream()
-                    .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority(role.getTitle()))
-                    .collect(java.util.stream.Collectors.toList()));
+            user.getRoles().forEach(role -> {
+                authorities.add(new SimpleGrantedAuthority(role.getTitle()));
+
+                if (role.getPermissions() != null) {
+                    role.getPermissions().forEach(permission ->
+                            authorities.add(new SimpleGrantedAuthority(permission.getPermission()))
+                    );
+                }
+            });
         }
 
         if (authorities.isEmpty()) {
-            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         }
 
         return new org.springframework.security.core.userdetails.User(
